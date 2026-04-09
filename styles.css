@@ -126,6 +126,11 @@ a:hover {
   background: var(--clr-hotpink);
 }
 
+/* === Section scroll offset === */
+section[id] {
+  scroll-margin-top: 80px;
+}
+
 /* === Utilities === */
 .container {
   width: 100%;
