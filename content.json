@@ -1,0 +1,103 @@
+{
+  "hero": {
+    "greeting": "F1 Creator • UGC Specialist • Event Host",
+    "title": "Where <em>Glamour</em> Meets the Grid",
+    "description": "I'm Cynthia Wanjira — blending editorial style with the thrill of Formula 1. Creating content that brings the paddock energy to your screen.",
+    "image": "assets/hero.png",
+    "cta1Text": "View My Work →",
+    "cta1Link": "#portfolio",
+    "cta2Text": "Let's Collaborate",
+    "cta2Link": "#contact"
+  },
+  "about": {
+    "title": "The Girl in the <em>Paddock</em>",
+    "bio": [
+      "Hi, I'm <strong>Cynthia Wanjira</strong> — a Formula 1 content creator who brings <strong>editorial flair</strong> to the fast-paced world of motorsport. When I'm not trackside capturing the adrenaline, I'm crafting UGC that makes brands feel as thrilling as a last-lap overtake.",
+      "I believe motorsport content can be both <strong>glamorous and authentic</strong>. My work sits at the intersection of lifestyle, fashion, and the raw energy of the grid — bringing a fresh, feminine perspective to F1 content that resonates with a new generation of fans."
+    ],
+    "tags": ["🏎️ F1 Creator", "🎬 UGC Specialist", "🎤 Event Host", "✨ Brand Storyteller", "📸 Content Strategy"],
+    "image": "assets/about.png"
+  },
+  "portfolio": [
+    {
+      "id": 1,
+      "category": "race",
+      "type": "Race Day",
+      "title": "Sunset at the Circuit",
+      "description": "Capturing the golden hour magic on race day",
+      "image": "assets/portfolio-race.png",
+      "mediaType": "image"
+    },
+    {
+      "id": 2,
+      "category": "lifestyle",
+      "type": "Lifestyle",
+      "title": "Race Day Essentials",
+      "description": "Curated flat lays & lifestyle content",
+      "image": "assets/portfolio-lifestyle.png",
+      "mediaType": "image"
+    },
+    {
+      "id": 3,
+      "category": "event",
+      "type": "Event",
+      "title": "Fan Zone Energy",
+      "description": "Behind the scenes at F1 fan events",
+      "image": "assets/portfolio-event.png",
+      "mediaType": "image"
+    },
+    {
+      "id": 4,
+      "category": "brand",
+      "type": "Brand Collab",
+      "title": "Paddock Club Exclusive",
+      "description": "Luxury brand partnerships at the paddock",
+      "image": "assets/portfolio-brand.png",
+      "mediaType": "image"
+    }
+  ],
+  "stats": [
+    { "icon": "👁️", "target": 2500000, "suffix": "", "label": "TikTok Views" },
+    { "icon": "🎬", "target": 50000, "suffix": "", "label": "TikTok Followers" },
+    { "icon": "🤝", "target": 15, "suffix": "+", "label": "Brand Partnerships" },
+    { "icon": "🏁", "target": 20, "suffix": "+", "label": "Events Covered" }
+  ],
+  "services": [
+    {
+      "icon": "🎬",
+      "title": "UGC Creation",
+      "description": "Authentic, high-quality user-generated content that captures the energy of F1 and resonates with your target audience.",
+      "features": [
+        "Short-form video (TikTok, Reels)",
+        "Product integrations & reviews",
+        "Race day vlogs & behind-the-scenes",
+        "Social media takeovers",
+        "Lifestyle & fashion content"
+      ],
+      "ctaText": "Get Started →",
+      "ctaLink": "#contact"
+    },
+    {
+      "icon": "🎤",
+      "title": "Event Hosting",
+      "description": "Energetic, polished event hosting for F1 watch parties, brand activations, fan meet-ups, and motorsport events.",
+      "features": [
+        "F1 watch parties & screenings",
+        "Brand launch events",
+        "Fan zone hosting & engagement",
+        "Panel moderation",
+        "Live social coverage"
+      ],
+      "ctaText": "Book Me →",
+      "ctaLink": "#contact"
+    }
+  ],
+  "contact": {
+    "email": "cynthiawanjirastudio@gmail.com",
+    "tiktok": "@pdkprincesscyn",
+    "tiktokUrl": "https://tiktok.com/@pdkprincesscyn",
+    "instagram": "@pdkprincesscyn",
+    "instagramUrl": "https://instagram.com/pdkprincesscyn",
+    "introText": "Whether you're looking for eye-catching UGC, an event host who brings the energy, or a creative partnership that stands out — let's make it happen."
+  }
+}

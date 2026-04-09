@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cynthia Wanjira — Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">Cynthia <span>W.</span></span>
+      <span class="topbar-badge">Admin</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn btn-ghost" id="btn-preview" title="Preview Site">
+        👁️ Preview
+      </button>
+      <button class="topbar-btn btn-ghost" id="btn-import" title="Import content.json">
+        📥 Import
+      </button>
+      <button class="topbar-btn btn-ghost" id="btn-export" title="Download content.json">
+        📤 Export
+      </button>
+      <button class="topbar-btn btn-accent" id="btn-save" title="Save Changes">
+        💾 Save
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none">
+    </div>
+  </header>
+
+  <!-- ===== LAYOUT ===== -->
+  <div class="admin-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <a href="#" class="sidebar-link active" data-panel="hero">
+          <span class="sidebar-icon">🏠</span>
+          <span>Hero</span>
+        </a>
+        <a href="#" class="sidebar-link" data-panel="about">
+          <span class="sidebar-icon">👤</span>
+          <span>About</span>
+        </a>
+        <a href="#" class="sidebar-link" data-panel="portfolio">
+          <span class="sidebar-icon">📸</span>
+          <span>Portfolio</span>
+        </a>
+        <a href="#" class="sidebar-link" data-panel="stats">
+          <span class="sidebar-icon">📊</span>
+          <span>Stats</span>
+        </a>
+        <a href="#" class="sidebar-link" data-panel="services">
+          <span class="sidebar-icon">💼</span>
+          <span>Services</span>
+        </a>
+        <a href="#" class="sidebar-link" data-panel="contact">
+          <span class="sidebar-icon">📬</span>
+          <span>Contact</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p class="sidebar-hint">Changes save to your browser. Use <strong>Export</strong> to download your content.json for deployment.</p>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="admin-main">
+
+      <!-- ===== HERO PANEL ===== -->
+      <section class="panel active" id="panel-hero">
+        <div class="panel-header">
+          <h2 class="panel-title">Hero Section</h2>
+          <p class="panel-desc">The first thing visitors see — make it count.</p>
+        </div>
+
+        <div class="form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Greeting / Tagline</label>
+              <input type="text" class="form-input" id="hero-greeting" placeholder="F1 Creator • UGC Specialist • Event Host">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Main Headline</label>
+              <input type="text" class="form-input" id="hero-title" placeholder='Where <em>Glamour</em> Meets the Grid'>
+              <span class="form-hint">Use &lt;em&gt;word&lt;/em&gt; for rose-gold italic accent</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <textarea class="form-textarea" id="hero-description" rows="3" placeholder="A short intro about you..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-row form-row-2col">
+            <div class="form-group">
+              <label class="form-label">CTA Button 1 — Text</label>
+              <input type="text" class="form-input" id="hero-cta1-text" placeholder="View My Work →">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTA Button 1 — Link</label>
+              <input type="text" class="form-input" id="hero-cta1-link" placeholder="#portfolio">
+            </div>
+          </div>
+
+          <div class="form-row form-row-2col">
+            <div class="form-group">
+              <label class="form-label">CTA Button 2 — Text</label>
+              <input type="text" class="form-input" id="hero-cta2-text" placeholder="Let's Collaborate">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CTA Button 2 — Link</label>
+              <input type="text" class="form-input" id="hero-cta2-link" placeholder="#contact">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Hero Image</label>
+              <div class="image-upload" id="hero-image-upload">
+                <img src="" alt="" class="image-preview" id="hero-image-preview">
+                <div class="image-upload-overlay">
+                  <span>📷 Click or drag to upload</span>
+                </div>
+                <input type="file" accept="image/*" class="image-input" id="hero-image-input">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ABOUT PANEL ===== -->
+      <section class="panel" id="panel-about">
+        <div class="panel-header">
+          <h2 class="panel-title">About Section</h2>
+          <p class="panel-desc">Tell your story — who you are and what makes you unique.</p>
+        </div>
+
+        <div class="form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Section Title</label>
+              <input type="text" class="form-input" id="about-title" placeholder='The Girl in the <em>Paddock</em>'>
+              <span class="form-hint">Use &lt;em&gt;word&lt;/em&gt; for rose-gold italic accent</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bio — Paragraph 1</label>
+              <textarea class="form-textarea" id="about-bio-1" rows="4" placeholder="Your first bio paragraph..."></textarea>
+              <span class="form-hint">Use &lt;strong&gt;text&lt;/strong&gt; for bold highlights</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bio — Paragraph 2</label>
+              <textarea class="form-textarea" id="about-bio-2" rows="4" placeholder="Your second bio paragraph..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tags / Badges</label>
+              <div id="about-tags-editor" class="tags-editor">
+                <div class="tags-list" id="about-tags-list"></div>
+                <div class="tags-add">
+                  <input type="text" class="form-input form-input-sm" id="about-tag-input" placeholder="Add a tag (e.g. 🏎️ F1 Creator)">
+                  <button class="btn-small btn-accent" id="about-tag-add">+ Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">About Image</label>
+              <div class="image-upload" id="about-image-upload">
+                <img src="" alt="" class="image-preview" id="about-image-preview">
+                <div class="image-upload-overlay">
+                  <span>📷 Click or drag to upload</span>
+                </div>
+                <input type="file" accept="image/*" class="image-input" id="about-image-input">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PORTFOLIO PANEL ===== -->
+      <section class="panel" id="panel-portfolio">
+        <div class="panel-header">
+          <h2 class="panel-title">Portfolio / Work</h2>
+          <p class="panel-desc">Manage your portfolio items — add photos, videos, and brand collabs.</p>
+        </div>
+
+        <div class="portfolio-actions">
+          <button class="btn-accent" id="portfolio-add-btn">+ Add New Item</button>
+        </div>
+
+        <div class="portfolio-items" id="portfolio-items-list">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Add/Edit Modal -->
+        <div class="modal-overlay" id="portfolio-modal">
+          <div class="modal">
+            <div class="modal-header">
+              <h3 class="modal-title" id="portfolio-modal-title">Add Portfolio Item</h3>
+              <button class="modal-close" id="portfolio-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-row form-row-2col">
+                <div class="form-group">
+                  <label class="form-label">Title</label>
+                  <input type="text" class="form-input" id="portfolio-item-title" placeholder="Sunset at the Circuit">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select class="form-input" id="portfolio-item-category">
+                    <option value="race">Race Day</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="event">Event</option>
+                    <option value="brand">Brand Collab</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row form-row-2col">
+                <div class="form-group">
+                  <label class="form-label">Category Label</label>
+                  <input type="text" class="form-input" id="portfolio-item-type" placeholder="Race Day">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Media Type</label>
+                  <select class="form-input" id="portfolio-item-media-type">
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <input type="text" class="form-input" id="portfolio-item-desc" placeholder="A short description of this work...">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Image / Video</label>
+                  <div class="image-upload" id="portfolio-item-upload">
+                    <img src="" alt="" class="image-preview" id="portfolio-item-preview">
+                    <div class="image-upload-overlay">
+                      <span>📷 Click or drag to upload</span>
+                    </div>
+                    <input type="file" accept="image/*,video/*" class="image-input" id="portfolio-item-input">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-ghost" id="portfolio-modal-cancel">Cancel</button>
+              <button class="btn-accent" id="portfolio-modal-save">Save Item</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STATS PANEL ===== -->
+      <section class="panel" id="panel-stats">
+        <div class="panel-header">
+          <h2 class="panel-title">Stats / Social Proof</h2>
+          <p class="panel-desc">Your impressive numbers — these auto-animate on the live site.</p>
+        </div>
+
+        <div class="form-card" id="stats-form">
+          <!-- Dynamically populated by admin.js -->
+        </div>
+      </section>
+
+      <!-- ===== SERVICES PANEL ===== -->
+      <section class="panel" id="panel-services">
+        <div class="panel-header">
+          <h2 class="panel-title">Services</h2>
+          <p class="panel-desc">What you offer to brands and partners.</p>
+        </div>
+
+        <div id="services-cards-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- ===== CONTACT PANEL ===== -->
+      <section class="panel" id="panel-contact">
+        <div class="panel-header">
+          <h2 class="panel-title">Contact Information</h2>
+          <p class="panel-desc">How brands and sponsors can reach you.</p>
+        </div>
+
+        <div class="form-card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-input" id="contact-email" placeholder="cynthiawanjirastudio@gmail.com">
+            </div>
+          </div>
+
+          <div class="form-row form-row-2col">
+            <div class="form-group">
+              <label class="form-label">TikTok Handle</label>
+              <input type="text" class="form-input" id="contact-tiktok" placeholder="@pdkprincesscyn">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TikTok URL</label>
+              <input type="url" class="form-input" id="contact-tiktok-url" placeholder="https://tiktok.com/@pdkprincesscyn">
+            </div>
+          </div>
+
+          <div class="form-row form-row-2col">
+            <div class="form-group">
+              <label class="form-label">Instagram Handle</label>
+              <input type="text" class="form-input" id="contact-instagram" placeholder="@pdkprincesscyn">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Instagram URL</label>
+              <input type="url" class="form-input" id="contact-instagram-url" placeholder="https://instagram.com/pdkprincesscyn">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Contact Section Intro Text</label>
+              <textarea class="form-textarea" id="contact-intro" rows="3" placeholder="Whether you're looking for eye-catching UGC..."></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div class="toast" id="toast">
+    <span class="toast-icon">✓</span>
+    <span class="toast-text" id="toast-text">Saved successfully!</span>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
