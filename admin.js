@@ -8,62 +8,128 @@
 
   // ===== STATE =====
   let content = null;
-  let editingPortfolioId = null; // null = adding, number = editing
+  let editingPortfolioId = null;
+  let hasUnsavedChanges = false;
 
   // ===== INIT =====
   document.addEventListener('DOMContentLoaded', async () => {
-    await loadContent();
-    initSidebar();
-    initImageUploads();
-    initTagsEditor();
-    initPortfolioManager();
-    initStatsEditor();
-    initServicesEditor();
-    initTopbarActions();
-    populateAllForms();
+    try {
+      await loadContent();
+      initSidebar();
+      initImageUploads();
+      initTagsEditor();
+      initPortfolioManager();
+      initStatsEditor();
+      initServicesEditor();
+      initTopbarActions();
+      initUnsavedChangesTracker();
+      populateAllForms();
+      showToast('✓ Content loaded', 'success');
+    } catch (err) {
+      console.error('Admin init error:', err);
+      showToast('⚠ Failed to initialize — check console', 'error');
+    }
   });
 
   // ===== CONTENT LOADING =====
   async function loadContent() {
-    // Priority: localStorage > content.json > empty defaults
     const stored = localStorage.getItem('cw_admin_content');
     if (stored) {
       try {
         content = JSON.parse(stored);
+        console.log('✓ Loaded from localStorage');
         return;
-      } catch (e) { /* fall through */ }
+      } catch (e) {
+        console.warn('localStorage corrupted, clearing...', e);
+        localStorage.removeItem('cw_admin_content');
+      }
     }
 
     try {
       const response = await fetch('content.json');
       if (response.ok) {
         content = await response.json();
+        console.log('✓ Loaded from content.json');
         return;
       }
-    } catch (e) { /* fall through */ }
+    } catch (e) {
+      console.warn('content.json not available:', e.message);
+    }
 
-    // Empty defaults
-    content = {
+    console.log('Using empty defaults');
+    content = getEmptyDefaults();
+  }
+
+  function getEmptyDefaults() {
+    return {
       hero: { greeting: '', title: '', description: '', image: '', cta1Text: '', cta1Link: '', cta2Text: '', cta2Link: '' },
       about: { title: '', bio: ['', ''], tags: [], image: '' },
       portfolio: [],
       stats: [
-        { icon: '📊', target: 0, suffix: '', label: 'Metric' },
-        { icon: '📊', target: 0, suffix: '', label: 'Metric' },
-        { icon: '📊', target: 0, suffix: '', label: 'Metric' },
-        { icon: '📊', target: 0, suffix: '', label: 'Metric' }
+        { icon: '👁️', target: 0, suffix: '', label: 'TikTok Views' },
+        { icon: '🎬', target: 0, suffix: '', label: 'TikTok Followers' },
+        { icon: '🤝', target: 0, suffix: '+', label: 'Brand Partnerships' },
+        { icon: '🏁', target: 0, suffix: '+', label: 'Events Covered' }
       ],
       services: [
-        { icon: '🎬', title: '', description: '', features: [], ctaText: '', ctaLink: '' },
-        { icon: '🎤', title: '', description: '', features: [], ctaText: '', ctaLink: '' }
+        { icon: '🎬', title: 'UGC Creation', description: '', features: [], ctaText: 'Get Started →', ctaLink: '#contact' },
+        { icon: '🎤', title: 'Event Hosting', description: '', features: [], ctaText: 'Book Me →', ctaLink: '#contact' }
       ],
       contact: { email: '', tiktok: '', tiktokUrl: '', instagram: '', instagramUrl: '', introText: '' }
     };
   }
 
   function saveContent() {
-    localStorage.setItem('cw_admin_content', JSON.stringify(content));
-    showToast('Changes saved!');
+    try {
+      const json = JSON.stringify(content);
+      // Check localStorage capacity (~5MB limit)
+      const sizeKB = (json.length * 2) / 1024;
+      if (sizeKB > 4500) {
+        showToast('⚠ Content too large! Reduce image sizes.', 'error');
+        return false;
+      }
+      localStorage.setItem('cw_admin_content', json);
+      hasUnsavedChanges = false;
+      updateSaveIndicator();
+      return true;
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        showToast('⚠ Storage full! Export your content and reduce image sizes.', 'error');
+      } else {
+        showToast('⚠ Save failed: ' + e.message, 'error');
+      }
+      console.error('Save error:', e);
+      return false;
+    }
+  }
+
+  // ===== UNSAVED CHANGES TRACKER =====
+  function initUnsavedChangesTracker() {
+    // Track changes on all form inputs
+    document.addEventListener('input', (e) => {
+      if (e.target.closest('.admin-main')) {
+        hasUnsavedChanges = true;
+        updateSaveIndicator();
+      }
+    });
+
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+      }
+    });
+  }
+
+  function updateSaveIndicator() {
+    const saveBtn = document.getElementById('btn-save');
+    if (!saveBtn) return;
+    if (hasUnsavedChanges) {
+      saveBtn.innerHTML = '💾 Save <span class="unsaved-dot">●</span>';
+    } else {
+      saveBtn.innerHTML = '💾 Save';
+    }
   }
 
   // ===== SIDEBAR NAVIGATION =====
@@ -74,11 +140,12 @@
         e.preventDefault();
         const panelId = link.getAttribute('data-panel');
 
-        // Update sidebar active state
+        // Auto-collect current form data before switching panels
+        try { collectAllData(); } catch (err) { /* ignore */ }
+
         links.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
 
-        // Show chosen panel
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         const panel = document.getElementById('panel-' + panelId);
         if (panel) panel.classList.add('active');
@@ -88,12 +155,17 @@
 
   // ===== POPULATE ALL FORMS =====
   function populateAllForms() {
-    populateHero();
-    populateAbout();
-    populatePortfolioList();
-    populateStats();
-    populateServices();
-    populateContact();
+    try {
+      populateHero();
+      populateAbout();
+      populatePortfolioList();
+      populateStats();
+      populateServices();
+      populateContact();
+    } catch (err) {
+      console.error('Form population error:', err);
+      showToast('⚠ Error loading some fields', 'error');
+    }
   }
 
   // --- Hero ---
@@ -153,6 +225,8 @@
         const idx = parseInt(btn.getAttribute('data-index'));
         content.about.tags.splice(idx, 1);
         renderAboutTags();
+        hasUnsavedChanges = true;
+        updateSaveIndicator();
       });
     });
   }
@@ -169,6 +243,8 @@
         content.about.tags.push(val);
         input.value = '';
         renderAboutTags();
+        hasUnsavedChanges = true;
+        updateSaveIndicator();
       }
     }
 
@@ -184,16 +260,16 @@
     if (!list) return;
 
     if (!content.portfolio || content.portfolio.length === 0) {
-      list.innerHTML = '<p style="color: var(--clr-grey); font-size: 0.85rem; padding: 1rem;">No portfolio items yet. Click "Add New Item" to create one.</p>';
+      list.innerHTML = '<p style="color: var(--clr-grey); font-size: 0.85rem; padding: 1rem;">No portfolio items yet. Click "+ Add New Item" to create one.</p>';
       return;
     }
 
     list.innerHTML = content.portfolio.map(item => `
       <div class="portfolio-item-card" data-id="${item.id}">
-        <img class="portfolio-item-thumb" src="${item.image}" alt="${item.title}" onerror="this.style.display='none'">
+        <img class="portfolio-item-thumb" src="${item.image}" alt="${item.title}" onerror="this.style.background='var(--clr-surface)'; this.alt='No image'">
         <div class="portfolio-item-info">
-          <div class="portfolio-item-name">${item.title}</div>
-          <div class="portfolio-item-meta"><span>${item.type}</span> · ${item.mediaType} · ${item.description}</div>
+          <div class="portfolio-item-name">${escapeHtml(item.title)}</div>
+          <div class="portfolio-item-meta"><span>${escapeHtml(item.type)}</span> · ${item.mediaType} · ${escapeHtml(item.description)}</div>
         </div>
         <div class="portfolio-item-actions">
           <button class="btn-small btn-ghost portfolio-edit-btn" data-id="${item.id}">✏️ Edit</button>
@@ -202,7 +278,6 @@
       </div>
     `).join('');
 
-    // Attach events
     list.querySelectorAll('.portfolio-edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openPortfolioModal(parseInt(btn.getAttribute('data-id'))));
     });
@@ -210,8 +285,12 @@
     list.querySelectorAll('.portfolio-delete-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = parseInt(btn.getAttribute('data-id'));
-        content.portfolio = content.portfolio.filter(p => p.id !== id);
-        populatePortfolioList();
+        if (confirm('Delete this portfolio item?')) {
+          content.portfolio = content.portfolio.filter(p => p.id !== id);
+          populatePortfolioList();
+          hasUnsavedChanges = true;
+          updateSaveIndicator();
+        }
       });
     });
   }
@@ -228,12 +307,16 @@
     if (cancelBtn) cancelBtn.addEventListener('click', closePortfolioModal);
     if (saveBtn) saveBtn.addEventListener('click', savePortfolioItem);
 
-    // Close on backdrop click
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) closePortfolioModal();
       });
     }
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePortfolioModal();
+    });
   }
 
   function openPortfolioModal(id) {
@@ -241,7 +324,6 @@
     const title = document.getElementById('portfolio-modal-title');
 
     if (id !== null) {
-      // Edit mode
       editingPortfolioId = id;
       title.textContent = 'Edit Portfolio Item';
       const item = content.portfolio.find(p => p.id === id);
@@ -254,7 +336,6 @@
         setImagePreview('portfolio-item-preview', item.image);
       }
     } else {
-      // Add mode
       editingPortfolioId = null;
       title.textContent = 'Add Portfolio Item';
       setVal('portfolio-item-title', '');
@@ -270,7 +351,7 @@
 
   function closePortfolioModal() {
     const modal = document.getElementById('portfolio-modal');
-    modal.classList.remove('active');
+    if (modal) modal.classList.remove('active');
     editingPortfolioId = null;
   }
 
@@ -283,12 +364,11 @@
     const image = getImageSrc('portfolio-item-preview');
 
     if (!title) {
-      showToast('Please enter a title', true);
+      showToast('Please enter a title', 'error');
       return;
     }
 
     if (editingPortfolioId !== null) {
-      // Update existing
       const item = content.portfolio.find(p => p.id === editingPortfolioId);
       if (item) {
         item.title = title;
@@ -298,20 +378,15 @@
         item.description = description;
         if (image) item.image = image;
       }
+      showToast('Portfolio item updated ✓', 'success');
     } else {
-      // Add new
       const maxId = content.portfolio.reduce((max, p) => Math.max(max, p.id || 0), 0);
-      content.portfolio.push({
-        id: maxId + 1,
-        category,
-        type,
-        title,
-        description,
-        image: image || '',
-        mediaType
-      });
+      content.portfolio.push({ id: maxId + 1, category, type, title, description, image: image || '', mediaType });
+      showToast('Portfolio item added ✓', 'success');
     }
 
+    hasUnsavedChanges = true;
+    updateSaveIndicator();
     populatePortfolioList();
     closePortfolioModal();
   }
@@ -329,31 +404,29 @@
         </div>
         <div class="form-group">
           <label class="form-label">Label</label>
-          <input type="text" class="form-input" id="stat-label-${i}" value="${stat.label}">
+          <input type="text" class="form-input" id="stat-label-${i}" value="${escapeAttr(stat.label)}">
         </div>
         <div class="form-group">
           <label class="form-label">Number</label>
-          <input type="number" class="form-input" id="stat-target-${i}" value="${stat.target}">
+          <input type="number" class="form-input" id="stat-target-${i}" value="${stat.target}" min="0">
         </div>
         <div class="form-group">
           <label class="form-label">Suffix</label>
-          <input type="text" class="form-input" id="stat-suffix-${i}" value="${stat.suffix}" placeholder="+, K, M">
+          <input type="text" class="form-input" id="stat-suffix-${i}" value="${escapeAttr(stat.suffix)}" placeholder="+, K, M">
         </div>
       </div>
     `).join('');
   }
 
-  function initStatsEditor() {
-    // Stats are collected on save
-  }
+  function initStatsEditor() { }
 
   function collectStats() {
     if (!content.stats) return;
     content.stats = content.stats.map((stat, i) => ({
       icon: getVal(`stat-icon-${i}`) || stat.icon,
       label: getVal(`stat-label-${i}`) || stat.label,
-      target: parseInt(getVal(`stat-target-${i}`)) || stat.target,
-      suffix: getVal(`stat-suffix-${i}`)
+      target: parseInt(getVal(`stat-target-${i}`)) || 0,
+      suffix: document.getElementById(`stat-suffix-${i}`)?.value ?? stat.suffix
     }));
   }
 
@@ -364,7 +437,7 @@
 
     container.innerHTML = content.services.map((svc, i) => `
       <div class="service-edit-card">
-        <div class="service-edit-title">${svc.icon} Service ${i + 1}: ${svc.title || 'Untitled'}</div>
+        <div class="service-edit-title">${svc.icon} Service ${i + 1}: ${escapeHtml(svc.title) || 'Untitled'}</div>
         <div class="form-row form-row-2col">
           <div class="form-group">
             <label class="form-label">Icon (Emoji)</label>
@@ -372,13 +445,13 @@
           </div>
           <div class="form-group">
             <label class="form-label">Title</label>
-            <input type="text" class="form-input" id="svc-title-${i}" value="${svc.title}">
+            <input type="text" class="form-input" id="svc-title-${i}" value="${escapeAttr(svc.title)}">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Description</label>
-            <textarea class="form-textarea" id="svc-desc-${i}" rows="3">${svc.description}</textarea>
+            <textarea class="form-textarea" id="svc-desc-${i}" rows="3">${escapeHtml(svc.description)}</textarea>
           </div>
         </div>
         <div class="form-row">
@@ -387,7 +460,7 @@
             <div class="features-editor" id="svc-features-${i}">
               ${(svc.features || []).map((f, fi) => `
                 <div class="feature-row">
-                  <input type="text" class="form-input" data-svc="${i}" data-feature="${fi}" value="${f}">
+                  <input type="text" class="form-input" data-svc="${i}" data-feature="${fi}" value="${escapeAttr(f)}">
                   <button class="feature-remove" data-svc="${i}" data-feature="${fi}">✕</button>
                 </div>
               `).join('')}
@@ -398,48 +471,47 @@
         <div class="form-row form-row-2col">
           <div class="form-group">
             <label class="form-label">CTA Button Text</label>
-            <input type="text" class="form-input" id="svc-cta-text-${i}" value="${svc.ctaText}">
+            <input type="text" class="form-input" id="svc-cta-text-${i}" value="${escapeAttr(svc.ctaText)}">
           </div>
           <div class="form-group">
             <label class="form-label">CTA Button Link</label>
-            <input type="text" class="form-input" id="svc-cta-link-${i}" value="${svc.ctaLink}">
+            <input type="text" class="form-input" id="svc-cta-link-${i}" value="${escapeAttr(svc.ctaLink)}">
           </div>
         </div>
       </div>
     `).join('');
 
-    // Attach remove events
     container.querySelectorAll('.feature-remove').forEach(btn => {
       btn.addEventListener('click', () => {
         const si = parseInt(btn.getAttribute('data-svc'));
         const fi = parseInt(btn.getAttribute('data-feature'));
         content.services[si].features.splice(fi, 1);
         populateServices();
+        hasUnsavedChanges = true;
+        updateSaveIndicator();
       });
     });
   }
 
-  // Global function for add feature button
   window.adminAddFeature = function (serviceIndex) {
     collectServices();
     if (!content.services[serviceIndex].features) content.services[serviceIndex].features = [];
     content.services[serviceIndex].features.push('');
     populateServices();
-    // Focus the new input
     const container = document.getElementById(`svc-features-${serviceIndex}`);
-    const inputs = container.querySelectorAll('.form-input');
-    if (inputs.length > 0) inputs[inputs.length - 1].focus();
+    const inputs = container?.querySelectorAll('.form-input');
+    if (inputs && inputs.length > 0) inputs[inputs.length - 1].focus();
+    hasUnsavedChanges = true;
+    updateSaveIndicator();
   };
 
   function collectServices() {
     if (!content.services) return;
     content.services = content.services.map((svc, i) => {
-      const featureInputs = document.querySelectorAll(`[data-svc="${i}"][data-feature]`);
+      const featureInputs = document.querySelectorAll(`input[data-svc="${i}"][data-feature]`);
       const features = [];
       featureInputs.forEach(input => {
-        if (input.tagName === 'INPUT' && input.value.trim()) {
-          features.push(input.value.trim());
-        }
+        if (input.value.trim()) features.push(input.value.trim());
       });
       return {
         icon: getVal(`svc-icon-${i}`) || svc.icon,
@@ -451,6 +523,8 @@
       };
     });
   }
+
+  function initServicesEditor() { }
 
   // --- Contact ---
   function populateContact() {
@@ -490,37 +564,47 @@
       const file = e.target.files[0];
       if (!file) return;
 
-      // Compress and convert to base64
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('⚠ File too large (max 10MB)', 'error');
+        return;
+      }
+
+      showToast('📷 Processing image...', 'info');
+
       compressImage(file, 800, 0.8, (dataUrl) => {
         preview.src = dataUrl;
         preview.classList.add('has-image');
+        hasUnsavedChanges = true;
+        updateSaveIndicator();
+        showToast('Image uploaded ✓', 'success');
       });
     });
   }
 
   function compressImage(file, maxSize, quality, callback) {
     const reader = new FileReader();
+    reader.onerror = () => {
+      showToast('⚠ Failed to read file', 'error');
+    };
     reader.onload = (e) => {
-      // For video files, just use the data URL directly
       if (file.type.startsWith('video/')) {
         callback(e.target.result);
         return;
       }
 
       const img = new Image();
+      img.onerror = () => {
+        showToast('⚠ Invalid image file', 'error');
+      };
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width;
         let h = img.height;
 
         if (w > maxSize || h > maxSize) {
-          if (w > h) {
-            h = (h / w) * maxSize;
-            w = maxSize;
-          } else {
-            w = (w / h) * maxSize;
-            h = maxSize;
-          }
+          if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+          else { w = (w / h) * maxSize; h = maxSize; }
         }
 
         canvas.width = w;
@@ -536,54 +620,96 @@
 
   // ===== TOP BAR ACTIONS =====
   function initTopbarActions() {
-    // Save
+    // === SAVE ===
     document.getElementById('btn-save').addEventListener('click', () => {
       collectAllData();
-      saveContent();
+      const success = saveContent();
+      if (success) {
+        showStatusOverlay('saved');
+      }
     });
 
-    // Export
+    // === EXPORT ===
     document.getElementById('btn-export').addEventListener('click', () => {
       collectAllData();
-      const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'content.json';
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('content.json downloaded!');
+      try {
+        const json = JSON.stringify(content, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'content.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatusOverlay('exported');
+      } catch (err) {
+        console.error('Export error:', err);
+        showToast('⚠ Export failed: ' + err.message, 'error');
+      }
     });
 
-    // Import
+    // === IMPORT ===
     const importBtn = document.getElementById('btn-import');
     const importFile = document.getElementById('import-file');
     importBtn.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
+      if (!file.name.endsWith('.json')) {
+        showToast('⚠ Please select a .json file', 'error');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (evt) => {
         try {
-          content = JSON.parse(evt.target.result);
+          const imported = JSON.parse(evt.target.result);
+          // Validate structure
+          if (!imported.hero && !imported.about && !imported.portfolio) {
+            showToast('⚠ Invalid content.json structure', 'error');
+            return;
+          }
+          content = imported;
           populateAllForms();
           saveContent();
-          showToast('Content imported successfully!');
+          showStatusOverlay('imported');
         } catch (err) {
-          showToast('Invalid JSON file', true);
+          showToast('⚠ Invalid JSON: ' + err.message, 'error');
         }
       };
+      reader.onerror = () => showToast('⚠ Failed to read file', 'error');
       reader.readAsText(file);
-      // Reset input so same file can be re-imported
       importFile.value = '';
     });
 
-    // Preview
+    // === PREVIEW ===
     document.getElementById('btn-preview').addEventListener('click', () => {
-      // Save before preview
       collectAllData();
-      saveContent();
-      window.open('index.html', '_blank');
+      const success = saveContent();
+      if (success) {
+        showToast('Opening preview...', 'info');
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = 'index.html';
+          link.target = '_blank';
+          link.rel = 'noopener';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, 300);
+      }
+    });
+
+    // === KEYBOARD SHORTCUTS ===
+    document.addEventListener('keydown', (e) => {
+      // Ctrl+S / Cmd+S to save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('btn-save').click();
+      }
     });
   }
 
@@ -593,7 +719,101 @@
     collectStats();
     collectServices();
     collectContact();
-    // Portfolio is already live-updated
+  }
+
+  // ===== STATUS OVERLAY (Big visual feedback) =====
+  function showStatusOverlay(type) {
+    // Remove any existing overlay
+    const existing = document.getElementById('status-overlay');
+    if (existing) existing.remove();
+
+    const configs = {
+      saved: {
+        icon: '✓',
+        title: 'Saved!',
+        subtitle: 'All changes saved to your browser.',
+        color: '#4ADE80'
+      },
+      exported: {
+        icon: '📤',
+        title: 'Exported!',
+        subtitle: 'content.json downloaded. Upload it to GitHub to go live!',
+        color: '#E8A0BF'
+      },
+      imported: {
+        icon: '📥',
+        title: 'Imported!',
+        subtitle: 'Content loaded and saved successfully.',
+        color: '#60A5FA'
+      }
+    };
+
+    const cfg = configs[type];
+    if (!cfg) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'status-overlay';
+    overlay.innerHTML = `
+      <div class="status-overlay-backdrop"></div>
+      <div class="status-overlay-card">
+        <div class="status-overlay-icon" style="background: ${cfg.color}20; color: ${cfg.color};">${cfg.icon}</div>
+        <h3 class="status-overlay-title">${cfg.title}</h3>
+        <p class="status-overlay-subtitle">${cfg.subtitle}</p>
+        <button class="status-overlay-btn" style="background: ${cfg.color}; color: #0D0D0D;">Got it</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Animate in
+    requestAnimationFrame(() => overlay.classList.add('active'));
+
+    // Close handlers
+    const close = () => {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 300);
+    };
+
+    overlay.querySelector('.status-overlay-btn').addEventListener('click', close);
+    overlay.querySelector('.status-overlay-backdrop').addEventListener('click', close);
+
+    // Auto-close after 4 seconds
+    setTimeout(close, 4000);
+  }
+
+  // ===== TOAST NOTIFICATION =====
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    const text = document.getElementById('toast-text');
+    const icon = toast?.querySelector('.toast-icon');
+    if (!toast || !text) return;
+
+    text.textContent = message;
+
+    // Set icon and color based on type
+    if (icon) {
+      toast.className = 'toast'; // Reset classes
+      switch (type) {
+        case 'success':
+          icon.textContent = '✓';
+          toast.classList.add('toast-success');
+          break;
+        case 'error':
+          icon.textContent = '✕';
+          toast.classList.add('toast-error');
+          break;
+        case 'info':
+          icon.textContent = 'ℹ';
+          toast.classList.add('toast-info');
+          break;
+        default:
+          icon.textContent = '✓';
+          toast.classList.add('toast-success');
+      }
+    }
+
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
   // ===== HELPERS =====
@@ -617,30 +837,23 @@
 
   function getImageSrc(previewId) {
     const el = document.getElementById(previewId);
-    if (el && el.classList.contains('has-image')) {
-      return el.src;
-    }
+    if (el && el.classList.contains('has-image')) return el.src;
     return '';
   }
 
   function clearImagePreview(previewId) {
     const el = document.getElementById(previewId);
-    if (el) {
-      el.src = '';
-      el.classList.remove('has-image');
-    }
+    if (el) { el.src = ''; el.classList.remove('has-image'); }
   }
 
-  function showToast(message, isError) {
-    const toast = document.getElementById('toast');
-    const text = document.getElementById('toast-text');
-    if (!toast || !text) return;
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 
-    text.textContent = message;
-    toast.classList.toggle('error', !!isError);
-    toast.classList.add('show');
-
-    setTimeout(() => toast.classList.remove('show'), 3000);
+  function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
 })();

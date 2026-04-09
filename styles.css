@@ -663,13 +663,9 @@ section[id] {
 
 /* Hero social links */
 .hero-socials {
-  position: absolute;
-  bottom: var(--space-xl);
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   gap: var(--space-md);
-  z-index: 2;
+  margin-top: var(--space-lg);
   opacity: 0;
   animation: heroFadeIn 0.8s var(--ease-out) 1.1s forwards;
 }
@@ -1598,6 +1594,7 @@ section[id] {
     grid-template-columns: 1fr;
     text-align: center;
     padding-top: 120px;
+    padding-bottom: var(--space-md);
   }
   
   .hero-text {
@@ -1631,7 +1628,7 @@ section[id] {
   }
   
   .hero-socials {
-    bottom: var(--space-md);
+    justify-content: center;
   }
   
   .scroll-indicator {
